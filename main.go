@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// Estrutura para a resposta do endpoint /fixtures
 type Team struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
@@ -43,7 +42,6 @@ type APIResponse struct {
 	Fixtures []Fixture `json:"response"`
 }
 
-// Estrutura para a resposta do endpoint /leagues
 type LeagueInfo struct {
 	League struct {
 		ID   int    `json:"id"`
@@ -57,24 +55,21 @@ type LeaguesResponse struct {
 }
 
 func main() {
-	// Sua API Key
 	apiKey := "b6ed6a7250bf19f5a39f292dc859ad46"
 
-	// Data atual (hoje: 2025-03-22)
 	date := time.Now().Format("2006-01-02")
 
 	// Lista de ligas/competições
 	leagues := []struct {
 		ID     int
 		Season int
-		Name   string // Adicionado para armazenar o nome da liga
+		Name   string
 	}{
 		{ID: 71, Season: time.Now().Year()}, // Serie A (Brasil)
 		{ID: 72, Season: time.Now().Year()}, // Serie B (Brasil)
 		{ID: 13, Season: time.Now().Year()}, // Copa Libertadores
 	}
 
-	// Passo 1: Obter os nomes das ligas usando o endpoint /leagues
 	for i, league := range leagues {
 		leagueName, err := getLeagueNameFromAPI(apiKey, league.ID)
 		if err != nil {
@@ -84,12 +79,9 @@ func main() {
 		leagues[i].Name = leagueName
 	}
 
-	// Passo 2: Para cada liga, buscar os jogos do dia
 	for _, league := range leagues {
-		// Montar a URL com os parâmetros
 		url := fmt.Sprintf("https://v3.football.api-sports.io/fixtures?date=%s&league=%d&season=%d", date, league.ID, league.Season)
 
-		// Criar a requisição GET
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
 			fmt.Printf("Erro ao criar requisição para liga %d: %v\n", league.ID, err)
@@ -118,7 +110,6 @@ func main() {
 			continue
 		}
 
-		// Fazer o parsing do JSON
 		var apiResponse APIResponse
 		err = json.Unmarshal(body, &apiResponse)
 		if err != nil {
@@ -126,7 +117,6 @@ func main() {
 			continue
 		}
 
-		// Exibir os jogos da liga
 		if apiResponse.Results == 0 {
 			fmt.Printf("Nenhum jogo encontrado para a liga %s (ID: %d) no dia %s.\n", league.Name, league.ID, date)
 			continue
@@ -154,44 +144,35 @@ func main() {
 	}
 }
 
-// Função para obter o nome da liga diretamente do endpoint /leagues
 func getLeagueNameFromAPI(apiKey string, leagueID int) (string, error) {
-	// Montar a URL para buscar a liga pelo ID
 	url := fmt.Sprintf("https://v3.football.api-sports.io/leagues?id=%d", leagueID)
 
-	// Criar a requisição GET
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", fmt.Errorf("erro ao criar requisição: %v", err)
 	}
 
-	// Adicionar o header com a API Key
 	req.Header.Add("x-apisports-key", apiKey)
 
-	// Criar um cliente HTTP
 	client := &http.Client{}
 
-	// Fazer a requisição
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("erro ao fazer requisição: %v", err)
 	}
 	defer resp.Body.Close()
 
-	// Ler a resposta
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("erro ao ler resposta: %v", err)
 	}
 
-	// Fazer o parsing do JSON
 	var leaguesResponse LeaguesResponse
 	err = json.Unmarshal(body, &leaguesResponse)
 	if err != nil {
 		return "", fmt.Errorf("erro ao fazer o parsing do JSON: %v", err)
 	}
 
-	// Verificar se a liga foi encontrada
 	if leaguesResponse.Results == 0 || len(leaguesResponse.Leagues) == 0 {
 		return "Desconhecida", nil
 	}
