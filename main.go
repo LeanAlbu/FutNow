@@ -55,7 +55,7 @@ type LeaguesResponse struct {
 }
 
 func main() {
-	apiKey := "b6ed6a7250bf19f5a39f292dc859ad46"
+	apiKey := "yourkey"
 
 	date := time.Now().Format("2006-01-02")
 
